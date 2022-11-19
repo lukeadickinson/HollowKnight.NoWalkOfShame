@@ -56,9 +56,13 @@ namespace NoWalkOfShame
             return arg;
         }
 
+        //only update warp location when taking dmg when if it already exists. Otherwise, forced warp locations will be overwritten and softlock sections of the game.
         private int ModHooks_AfterTakeDamageHook(int hazardType, int damageAmount)
         {
-            Attempt_Set_Warp_Location();
+            if (WarpScene != "")
+            {
+                Attempt_Set_Warp_Location();
+            }
             return damageAmount;
         }
 
