@@ -9,6 +9,33 @@ namespace NoWalkOfShame
         //These methods were copied and slightly edited from https://github.com/homothetyhk/HollowKnight.BenchwarpMod/.
         //Credit to homothetyhk for original work. 
 
+        public static bool IsDarkOrDreamRoom()
+        {
+            return IsDarkRoom() || IsDreamRoom();
+        }
+
+        public static bool IsDarkRoom()
+        {
+            return (!PlayerData.instance.hasLantern && GameManager.instance.sm.darknessLevel == 2);
+        }
+
+        public static bool IsDreamRoom()
+        {
+            return GameManager.instance.sm.mapZone switch
+            {
+                //GlobalEnums.MapZone.DREAM_WORLD
+                //or GlobalEnums.MapZone.GODS_GLORY
+                //or GlobalEnums.MapZone.GODSEEKER_WASTE
+                //or GlobalEnums.MapZone.WHITE_PALACE => true,
+                //               _ => false,
+
+                GlobalEnums.MapZone.DREAM_WORLD
+                or GlobalEnums.MapZone.GODS_GLORY
+                or GlobalEnums.MapZone.GODSEEKER_WASTE => true,
+                               _ => false,
+            };
+        }
+
         public static void ChangeToScene(string sceneName, string gateName, float delay = 0f)
         {
             UIManager.instance.UIClosePauseMenu();

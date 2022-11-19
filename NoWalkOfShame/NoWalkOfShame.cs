@@ -3,7 +3,6 @@ using System.Reflection;
 
 namespace NoWalkOfShame
 {
-    //TODO: add LGPL-2.1 license (copy from benchwarpmod)
     public class NoWalkOfShame : Mod, ITogglableMod
     {
         // Store the currently loaded instance of the mod.
@@ -30,6 +29,8 @@ namespace NoWalkOfShame
             ModHooks.AfterPlayerDeadHook += ModHooks_AfterPlayerDeadHook;
 
             ModHooks.SetPlayerStringHook += ModHooks_SetPlayerStringHook;
+            ModHooks.AfterTakeDamageHook += ModHooks_AfterTakeDamageHook;
+
             ModHooks.AfterSavegameLoadHook += ModHooks_AfterSavegameLoadHook;
         }
 
@@ -41,31 +42,24 @@ namespace NoWalkOfShame
             ModHooks.BeforeSceneLoadHook -= ModHooks_BeforeSceneLoadHook;
             ModHooks.AfterPlayerDeadHook -= ModHooks_AfterPlayerDeadHook;
             ModHooks.SetPlayerStringHook -= ModHooks_SetPlayerStringHook;
+            ModHooks.AfterTakeDamageHook -= ModHooks_AfterTakeDamageHook;
             ModHooks.AfterSavegameLoadHook -= ModHooks_AfterSavegameLoadHook;
-
             // "Destroy" the loaded instance of the mod.
             NoWalkOfShame.LoadedInstance = null;
         }
 
+
+        //This will set the warp one room behind. This is needed if the current room is not valid for warping and took dmg.
         private string ModHooks_BeforeSceneLoadHook(string arg)
         {
-            string gateText = GameManager.instance.entryGateName;
-            string sceneText = GameManager.instance.sceneName;
-            if (sceneText != null && sceneText != "" && gateText != null && gateText != "" && HeroController.instance.playerData.health != 0)
-            {
-                if (JustDied)
-                {
-                    JustDied = false;
-                }
-                else
-                {
-                    WarpScene = sceneText;
-                    WarpGate = gateText;
-                    Log($"Set Scene: {sceneText}");
-                    Log($"Set Gate: {gateText}");
-                }
-            }
+            Attempt_Set_Warp_Location();
             return arg;
+        }
+
+        private int ModHooks_AfterTakeDamageHook(int hazardType, int damageAmount)
+        {
+            Attempt_Set_Warp_Location();
+            return damageAmount;
         }
 
         private void ModHooks_AfterPlayerDeadHook()
@@ -91,12 +85,48 @@ namespace NoWalkOfShame
             }
             return res;
         }
+
         private void ModHooks_AfterSavegameLoadHook(SaveGameData obj)
         {
             //clear any past state data
             WarpScene = "";
             WarpGate = "";
             JustDied = false;
+        }
+
+        private void Attempt_Set_Warp_Location()
+        {
+            string gateText = GameManager.instance.entryGateName;
+            string sceneText = GameManager.instance.sceneName;
+
+            //if in dream/godhome, clear the warping logic in case of problems
+            if (BenchWarpMini.IsDreamRoom())
+            {
+                gateText = "";
+                sceneText = "";
+            }
+
+            if (sceneText != null && sceneText != "" &&
+                gateText != null && gateText != "" &&
+                HeroController.instance.playerData.health != 0 &&
+                !BenchWarpMini.IsDarkOrDreamRoom() &&
+                sceneText != "Room_Colosseum_Bronze" &&
+                sceneText != "Room_Colosseum_Silver" &&
+                sceneText != "Room_Colosseum_Gold")
+
+            {
+                if (JustDied)
+                {
+                    JustDied = false;
+                }
+                else
+                {
+                    WarpScene = sceneText;
+                    WarpGate = gateText;
+                    Log($"Set Scene: {sceneText}");
+                    Log($"Set Gate: {gateText}");
+                }
+            }
         }
 
     }
