@@ -8,6 +8,11 @@ namespace NoWalkOfShame
     {
         //These methods were copied and slightly edited from https://github.com/homothetyhk/HollowKnight.BenchwarpMod/.
         //Credit to homothetyhk for original work. 
+        //Changes: 
+            //Refactored part of IsDarkOrDreamRoom into 2 methods (including IsDarkRoom) from Benchwarp/BenchMaker.cs
+            //Change part of IsDreamRoom to ignore whiteplace.
+            //Copied ChangeToScene, LoadScene, and GetGatePosition from Benchwarp/ChangeScene.cs
+        //Date of change: 11/19/2022
 
         public static bool IsDarkOrDreamRoom()
         {
