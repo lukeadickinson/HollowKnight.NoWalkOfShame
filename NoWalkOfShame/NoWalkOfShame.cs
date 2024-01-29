@@ -1,5 +1,6 @@
 using Modding;
 using System.Reflection;
+using UnityEngine;
 
 namespace NoWalkOfShame
 {
@@ -10,8 +11,7 @@ namespace NoWalkOfShame
 
         public string WarpScene { get; set; }
         public string WarpGate { get; set; }
-        public bool JustDied { get; set; }
-
+        public bool NeedToWarp { get; set; }
 
         // Override the `GetVersion` method to get the assembly version.
         public override string GetVersion() => Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -30,6 +30,7 @@ namespace NoWalkOfShame
 
             ModHooks.SetPlayerStringHook += ModHooks_SetPlayerStringHook;
             ModHooks.AfterTakeDamageHook += ModHooks_AfterTakeDamageHook;
+            ModHooks.SetPlayerBoolHook += ModHooks_SetPlayerBoolHook;
 
             ModHooks.AfterSavegameLoadHook += ModHooks_AfterSavegameLoadHook;
         }
@@ -44,10 +45,24 @@ namespace NoWalkOfShame
             ModHooks.SetPlayerStringHook -= ModHooks_SetPlayerStringHook;
             ModHooks.AfterTakeDamageHook -= ModHooks_AfterTakeDamageHook;
             ModHooks.AfterSavegameLoadHook -= ModHooks_AfterSavegameLoadHook;
+
             // "Destroy" the loaded instance of the mod.
             NoWalkOfShame.LoadedInstance = null;
         }
-
+        private bool ModHooks_SetPlayerBoolHook(string name, bool orig)
+        {
+            if (name == "atBench" && orig == false)
+            {
+                if (NeedToWarp)
+                {
+                    NeedToWarp = false;
+                    this.Log($"warp to -> to:  {WarpScene}, {WarpGate}");
+                    GameManager.instance.entryGateName = WarpGate;
+                    BenchWarpMini.ChangeToScene(WarpScene, WarpGate);
+                }
+            }
+            return orig;
+        }
 
         //This will set the warp one room behind. This is needed if the current room is not valid for warping and took dmg.
         private string ModHooks_BeforeSceneLoadHook(string arg)
@@ -68,14 +83,15 @@ namespace NoWalkOfShame
 
         private void ModHooks_AfterPlayerDeadHook()
         {
-            JustDied = true;
             if (WarpScene == null || WarpScene == "" || WarpGate == null || WarpGate == "")
             {
-                return;
+                //do nothing
             }
-            this.Log($"change_spawn location from dead -> to:  {WarpScene}, {WarpGate}");
-            GameManager.instance.entryGateName = WarpGate;
-            BenchWarpMini.ChangeToScene(WarpScene, WarpGate);
+            else
+            {
+                NeedToWarp = true;
+            }
+
         }
 
         private string ModHooks_SetPlayerStringHook(string name, string res)
@@ -86,16 +102,18 @@ namespace NoWalkOfShame
 
                 WarpScene = "";
                 WarpGate = "";
+                NeedToWarp = false;
             }
             return res;
         }
 
         private void ModHooks_AfterSavegameLoadHook(SaveGameData obj)
         {
+            Log($"ModHooks_AfterSavegameLoadHook. Cleared Warp location (if there was one)");
             //clear any past state data
             WarpScene = "";
             WarpGate = "";
-            JustDied = false;
+            NeedToWarp = false;
         }
 
         private void Attempt_Set_Warp_Location()
@@ -116,14 +134,11 @@ namespace NoWalkOfShame
                 !BenchWarpMini.IsDarkOrDreamRoom() &&
                 sceneText != "Room_Colosseum_Bronze" &&
                 sceneText != "Room_Colosseum_Silver" &&
-                sceneText != "Room_Colosseum_Gold")
+                sceneText != "Room_Colosseum_Gold" &&
+                gateText != "dreamGate")
 
             {
-                if (JustDied)
-                {
-                    JustDied = false;
-                }
-                else
+                if (!NeedToWarp)
                 {
                     WarpScene = sceneText;
                     WarpGate = gateText;

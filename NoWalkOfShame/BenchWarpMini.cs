@@ -1,5 +1,6 @@
 using GlobalEnums;
 using Modding;
+using System.Collections;
 using UnityEngine;
 
 namespace NoWalkOfShame
@@ -9,9 +10,9 @@ namespace NoWalkOfShame
         //These methods were copied and slightly edited from https://github.com/homothetyhk/HollowKnight.BenchwarpMod/.
         //Credit to homothetyhk for original work. 
         //Changes: 
-            //Refactored part of IsDarkOrDreamRoom into 2 methods (including IsDarkRoom) from Benchwarp/BenchMaker.cs
-            //Change part of IsDreamRoom to ignore whiteplace.
-            //Copied ChangeToScene, LoadScene, and GetGatePosition from Benchwarp/ChangeScene.cs
+        //Refactored part of IsDarkOrDreamRoom into 2 methods (including IsDarkRoom) from Benchwarp/BenchMaker.cs
+        //Change part of IsDreamRoom to ignore whiteplace.
+        //Copied ChangeToScene, LoadScene, and GetGatePosition from Benchwarp/ChangeScene.cs
         //Date of change: 11/19/2022
 
         public static bool IsDarkOrDreamRoom()
@@ -37,31 +38,16 @@ namespace NoWalkOfShame
                 GlobalEnums.MapZone.DREAM_WORLD
                 or GlobalEnums.MapZone.GODS_GLORY
                 or GlobalEnums.MapZone.GODSEEKER_WASTE => true,
-                               _ => false,
+                _ => false,
             };
         }
 
         public static void ChangeToScene(string sceneName, string gateName, float delay = 0f)
         {
-            UIManager.instance.UIClosePauseMenu();
-            Time.timeScale = 1f;
-            GameManager.instance.FadeSceneIn();
-            GameManager.instance.isPaused = false;
-            GameCameras.instance.ResumeCameraShake();
-            if (HeroController.SilentInstance != null)
-            {
-                HeroController.instance.UnPause();
-            }
-            MenuButtonList.ClearAllLastSelected();
-            TimeController.GenericTimeScale = 1f;
-            GameManager.instance.actorSnapshotUnpaused.TransitionTo(0f);
-            GameManager.instance.ui.AudioGoToGameplay(.2f);
-            if (HeroController.SilentInstance != null)
-            {
-                HeroController.instance.UnPause();
-            }
             MenuButtonList.ClearAllLastSelected();
             PlayerData.instance.atBench = false; // kill bench storage
+            GameManager.instance.SetPlayerDataBool(nameof(PlayerData.atBench), false);
+
             if (HeroController.SilentInstance != null)
             {
                 if (HeroController.instance.cState.onConveyor || HeroController.instance.cState.onConveyorV || HeroController.instance.cState.inConveyorZone)
@@ -74,6 +60,7 @@ namespace NoWalkOfShame
 
                 HeroController.instance.cState.nearBench = false;
             }
+
 
             SceneLoad load = ReflectionHelper.GetField<GameManager, SceneLoad>(GameManager.instance, "sceneLoad");
             if (load != null)
@@ -91,9 +78,8 @@ namespace NoWalkOfShame
 
         private static void LoadScene(string sceneName, string gateName, float delay)
         {
-            GameManager.instance.StopAllCoroutines();
-            ReflectionHelper.SetField<GameManager, SceneLoad>(GameManager.instance, "sceneLoad", null);
 
+            ReflectionHelper.SetField<GameManager, SceneLoad>(GameManager.instance, "sceneLoad", null);
             GameManager.instance.BeginSceneTransition(new GameManager.SceneLoadInfo
             {
                 IsFirstLevelForPlayer = false,
@@ -102,10 +88,11 @@ namespace NoWalkOfShame
                 EntryGateName = gateName,
                 EntryDelay = delay,
                 PreventCameraFadeOut = false,
-                WaitForSceneTransitionCameraFade = true,
+                WaitForSceneTransitionCameraFade = false,
                 Visualization = GameManager.SceneLoadVisualizations.Default,
-                AlwaysUnloadUnusedAssets = false
+                AlwaysUnloadUnusedAssets = false,
             });
+
         }
         private static GatePosition GetGatePosition(string name)
         {
