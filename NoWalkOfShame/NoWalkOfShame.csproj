@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyTitle>NoWalkOfShame</AssemblyTitle>
-        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <AssemblyVersion>1.0.0.1</AssemblyVersion>
         <DebugType>portable</DebugType>
         <Copyright>Copyright © 2022</Copyright>
         <OutputPath>bin\$(Configuration)\</OutputPath>
